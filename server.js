@@ -226,8 +226,12 @@ app.post('/api/webhook/render', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`servidor rodando na porta ${PORT}`);
     
-    startBot();
+    setTimeout(() => {
+        startBot();
+    }, 1000);
 });
+
+server.timeout = 300000;
