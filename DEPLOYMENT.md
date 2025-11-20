@@ -39,6 +39,7 @@ git push origin main
 ### configurar deployment:
 - **name**: selfbot-discord (ou qualquer nome)
 - **environment**: node
+- **node version**: 18 ou superior
 - **build command**: `npm install`
 - **start command**: `node server.js`
 - **plan**: free
@@ -60,6 +61,7 @@ no painel do render, va em "environment" e adicione:
 
 **opcional (para auto-redeploy):**
 - `RENDER_DEPLOY_HOOK` = url do deploy hook (veja passo 6)
+- `RENDER_WEBHOOK_SECRET` = chave secreta para webhook (recomendado)
 
 **opcional (sem oauth2):**
 - `ALLOW_PUBLIC_TOKEN_SAVE` = `true` (permite salvar token sem login)
@@ -123,9 +125,10 @@ se tiver plano professional do render:
 1. va em settings > webhooks
 2. adicione webhook apontando para: `https://seu-app.onrender.com/api/webhook/render`
 3. selecione eventos: `service_unavailable`
-4. quando o servico cair, ele fara redeploy automatico
+4. adicione header `x-render-secret` com valor da variavel `RENDER_WEBHOOK_SECRET`
+5. quando o servico cair, ele fara redeploy automatico
 
-**nota:** o uptimerobot ja mantem o bot ativo, mas esse passo adiciona camada extra de seguranca.
+**nota:** o uptimerobot ja mantem o bot ativo. o webhook e uma camada extra opcional de seguranca.
 
 ## passo 7: usar o bot
 
