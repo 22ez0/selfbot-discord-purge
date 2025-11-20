@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vgss lindo gostoso</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: normal;
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            color: #666666;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #111111;
+            border: 1px solid #222222;
+            color: #ffffff;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #444444;
+        }
+
+        input::placeholder {
+            color: #333333;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #cccccc;
+        }
+
+        button:disabled {
+            background: #222222;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border: 1px solid #222222;
+            color: #666666;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .status.success {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .status.error {
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .info {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #111111;
+            color: #333333;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .discord-btn {
+            background: #5865f2;
+            color: #ffffff;
+        }
+
+        .discord-btn:hover {
+            background: #4752c4;
+        }
+
+        .separator {
+            text-align: center;
+            color: #333333;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+
+        .user-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #111111;
+            border: 1px solid #222222;
+            margin-bottom: 20px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            width: auto;
+            padding: 8px 16px;
+            background: #ff0000;
+            color: #ffffff;
+            font-size: 12px;
+        }
+
+        .logout-btn:hover {
+            background: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>vgss lindo gostoso</h1>
+
+        <div id="loginSection" style="display: none;">
+            <button onclick="loginDiscord()" class="discord-btn">
+                entrar com discord
+            </button>
+            <div class="separator">ou</div>
+        </div>
+
+        <div id="userInfo" style="display: none;">
+            <div class="user-card">
+                <span id="userName"></span>
+                <button onclick="logout()" class="logout-btn">sair</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>token do usuario</label>
+            <input 
+                type="password" 
+                id="tokenInput" 
+                placeholder="cole seu token aqui"
+                autocomplete="off"
+            >
+        </div>
+
+        <button onclick="saveToken()" id="saveBtn">
+            salvar token
+        </button>
+
+        <div class="status" id="status"></div>
+
+        <div class="info">
+            digite "cl" em qualquer conversa (dm, servidor, grupo) para apagar todas as suas mensagens instantaneamente
+        </div>
+    </div>
+
+    <script>
+        async function checkUser() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                
+                if (data.loggedIn) {
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('userInfo').style.display = 'block';
+                    document.getElementById('userName').textContent = data.user.username + '#' + data.user.discriminator;
+                } else {
+                    document.getElementById('loginSection').style.display = 'block';
+                    document.getElementById('userInfo').style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('loginSection').style.display = 'block';
+            }
+        }
+
+        function loginDiscord() {
+            window.location.href = '/api/auth/discord';
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                location.reload();
+            } catch (error) {
+                showStatus('erro ao fazer logout', 'error');
+            }
+        }
+
+        async function saveToken() {
+            const tokenInput = document.getElementById('tokenInput');
+            const saveBtn = document.getElementById('saveBtn');
+            const status = document.getElementById('status');
+            
+            const token = tokenInput.value.trim();
+            
+            if (!token) {
+                showStatus('erro: token vazio', 'error');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'salvando...';
+            
+            try {
+                const response = await fetch('/api/save-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token }),
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus(data.message || 'token salvo com sucesso', 'success');
+                    tokenInput.value = '';
+                } else {
+                    showStatus(data.error || 'erro ao salvar token', 'error');
+                }
+            } catch (error) {
+                showStatus('erro de conexao', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'salvar token';
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === 'success') {
+            showStatus('login realizado com sucesso', 'success');
+            window.history.replaceState({}, '', '/');
+        } else if (urlParams.get('error')) {
+            showStatus('erro: ' + urlParams.get('error'), 'error');
+            window.history.replaceState({}, '', '/');
+        }
+
+        document.getElementById('tokenInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveToken();
+            }
+        });
+
+        checkUser();
+    </script>
+</body>
+</html>
