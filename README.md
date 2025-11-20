@@ -88,6 +88,7 @@ veja `.env.example` para todas as variaveis disponiveis.
 - `DISCORD_CLIENT_SECRET` - secret do app discord (oauth2)
 - `DISCORD_REDIRECT_URI` - url de callback oauth2
 - `RENDER_DEPLOY_HOOK` - url do deploy hook do render
+- `RENDER_WEBHOOK_SECRET` - chave secreta para webhook render (seguranca)
 - `ALLOW_PUBLIC_TOKEN_SAVE` - permite salvar token sem login (true/false)
 
 ## tecnologias
