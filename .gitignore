@@ -1,0 +1,35 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+/tmp/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Token Discord (IMPORTANTE: Nunca commitar tokens!)
+discord_token.txt
+user_token.txt
+
+# Caches
+.cache/
+.upm/
+__pycache__/
+*.pyc
+.pytest_cache/
+.pythonlibs/
+.replit
+replit.nix
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Replit
+attached_assets/
