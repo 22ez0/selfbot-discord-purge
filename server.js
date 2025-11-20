@@ -26,6 +26,7 @@ const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'http://localhost:5000/api/callback';
 const RENDER_DEPLOY_HOOK = process.env.RENDER_DEPLOY_HOOK;
+const RENDER_WEBHOOK_SECRET = process.env.RENDER_WEBHOOK_SECRET;
 
 let botProcess = null;
 
@@ -160,32 +161,45 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.post('/api/save-token', (req, res) => {
-    if (!req.session.loggedIn && !process.env.ALLOW_PUBLIC_TOKEN_SAVE) {
-        return res.status(401).json({ error: 'faca login primeiro' });
-    }
-    
     const { token } = req.body;
     
-    if (!token || typeof token !== 'string' || token.trim().length === 0) {
-        return res.status(400).json({ error: 'token invalido' });
+    if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: 'token vazio' });
     }
 
     try {
+        const cleanToken = token.replace(/\s+/g, '').trim();
+        
+        if (!cleanToken) {
+            return res.status(400).json({ error: 'token vazio apos limpeza' });
+        }
+
         const tokenFilePath = path.join(__dirname, 'user_token.txt');
-        fs.writeFileSync(tokenFilePath, token.trim());
+        fs.writeFileSync(tokenFilePath, cleanToken);
         
-        setTimeout(() => {
-            startBot();
-        }, 500);
+        console.log('token salvo com sucesso, iniciando bot...');
         
-        res.json({ message: 'token salvo e bot reiniciado' });
+        startBot();
+        
+        res.json({ message: 'token salvo e bot iniciado' });
     } catch (error) {
-        console.error('erro ao salvar token:', error);
-        res.status(500).json({ error: 'erro ao salvar token' });
+        console.error('erro ao salvar token:', error.message);
+        res.status(500).json({ error: 'erro: ' + error.message });
     }
 });
 
 app.post('/api/webhook/render', async (req, res) => {
+    const webhookSecret = process.env.RENDER_WEBHOOK_SECRET;
+    
+    if (webhookSecret) {
+        const providedSecret = req.headers['x-render-secret'] || req.body.secret;
+        
+        if (providedSecret !== webhookSecret) {
+            console.log('webhook rejeitado: secret invalido');
+            return res.status(401).json({ error: 'nao autorizado' });
+        }
+    }
+    
     const { eventType, service } = req.body;
     
     console.log('webhook recebido:', { eventType, service });
