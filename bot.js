@@ -86,7 +86,22 @@ client.on('messageCreate', async (message) => {
 
 if (!USER_TOKEN) {
     console.error('erro: token nao encontrado. acesse o painel web para inserir seu token.');
-    process.exit(1);
+    process.exit(0);
 }
+
+const loginTimeout = setTimeout(() => {
+    console.error('timeout: bot nao conseguiu conectar em 30s');
+    process.exit(0);
+}, 30000);
+
+client.on('ready', () => {
+    clearTimeout(loginTimeout);
+});
+
+client.on('error', (error) => {
+    console.error('erro discord:', error.message);
+    clearTimeout(loginTimeout);
+    process.exit(0);
+});
 
 client.login(USER_TOKEN);
