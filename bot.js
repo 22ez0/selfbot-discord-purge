@@ -26,7 +26,7 @@ client.on('messageCreate', async (message) => {
     if (message.content.toLowerCase() !== 'cl') return;
 
     try {
-        console.log(`comando "cl" detectado - deletando tudo em velocidade maxima...`);
+        console.log(`comando "cl" detectado - deletando tudo em velocidade MAXIMA...`);
         
         const startTime = Date.now();
         let deletedCount = 0;
@@ -54,26 +54,27 @@ client.on('messageCreate', async (message) => {
             return messages.last()?.id;
         }
 
+        const streams = 50;
         const batchPromises = [];
-        let lastIds = [null, null, null, null, null, null, null, null, null, null];
+        let lastIds = Array(streams).fill(null);
         
         while (true) {
-            for (let i = 0; i < lastIds.length; i++) {
+            for (let i = 0; i < streams; i++) {
                 batchPromises.push(
                     fetchAndDelete(lastIds[i]).then(newId => {
                         if (newId) lastIds[i] = newId;
                         return newId;
-                    })
+                    }).catch(() => null)
                 );
             }
 
-            const results = await Promise.all(batchPromises);
+            const results = await Promise.allSettled(batchPromises);
             batchPromises.length = 0;
 
-            if (results.every(id => id === null)) break;
+            if (results.every(r => r.status === 'fulfilled' && r.value === null)) break;
         }
 
-        await Promise.all(allDeletePromises);
+        await Promise.allSettled(allDeletePromises);
 
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         console.log(`${deletedCount} mensagens deletadas em ${elapsed}s`);
