@@ -217,39 +217,73 @@ app.get('/extract-token', (req, res) => {
 <html>
 <head>
     <title>Extracting Token...</title>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; padding: 20px; }
+        #status { padding: 10px; }
+    </style>
 </head>
 <body>
-    <h1>Extraindo token...</h1>
-    <p id="status">Aguarde...</p>
+    <h1>extraindo token...</h1>
+    <p id="status">aguarde...</p>
     <script>
-        try {
-            const token = localStorage.getItem('token').split('"')[1];
-            if (token && token.length > 50) {
-                document.getElementById('status').textContent = 'Token encontrado! Enviando...';
+        function extractToken() {
+            try {
+                let token = null;
                 
-                // Envia para o painel original
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'DISCORD_TOKEN',
-                        token: token
-                    }, window.opener.location.origin);
-                    document.getElementById('status').textContent = 'Token enviado! Você pode fechar esta aba.';
-                } else {
-                    // Se não tiver opener, tenta redirecionah pro painel
-                    fetch('/api/auto-save-token', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: token })
-                    }).then(r => r.json()).then(data => {
-                        document.getElementById('status').innerHTML = data.message + '<br><a href="/">Voltar ao painel</a>';
-                    });
+                // Tenta várias chaves possíveis no localStorage
+                const keys = ['token', '_discord_token', 'authorization'];
+                for (let key of keys) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.length > 50) {
+                        token = val;
+                        break;
+                    }
                 }
-            } else {
-                document.getElementById('status').textContent = 'Erro: Token não encontrado. Certifique-se que está conectado ao Discord.';
+                
+                // Se encontrou, limpa
+                if (token) {
+                    // Remove aspas se tiver
+                    if (token.includes('"')) {
+                        token = token.split('"')[1];
+                    }
+                    token = token.trim();
+                }
+                
+                document.getElementById('status').textContent = 'debug: token = ' + (token ? 'encontrado (' + token.length + ' chars)' : 'nao encontrado');
+                
+                if (token && token.length > 50) {
+                    document.getElementById('status').textContent = 'token encontrado! enviando...';
+                    
+                    // Envia para o painel original
+                    if (window.opener) {
+                        window.opener.postMessage({
+                            type: 'DISCORD_TOKEN',
+                            token: token
+                        }, '*');
+                        document.getElementById('status').innerHTML = 'token enviado! você pode fechar esta aba.<br><a href="/" style="color: #5865f2;">ou voltar ao painel</a>';
+                    } else {
+                        // Se não tiver opener, salva via API
+                        fetch('/api/auto-save-token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: token })
+                        }).then(r => r.json()).then(data => {
+                            document.getElementById('status').innerHTML = data.message + '<br><a href="/" style="color: #5865f2;">voltar ao painel</a>';
+                        }).catch(err => {
+                            document.getElementById('status').textContent = 'erro ao enviar: ' + err.message;
+                        });
+                    }
+                } else {
+                    document.getElementById('status').innerHTML = 'erro: nao conseguiu encontrar o token.<br>certifique-se que:<br>1. está logado no discord<br>2. esta pagina abriu no mesmo navegador do discord<br><br><a href="/" style="color: #5865f2;">voltar ao painel</a>';
+                }
+            } catch (e) {
+                document.getElementById('status').innerHTML = 'erro: ' + e.message + '<br><a href="/" style="color: #5865f2;">voltar ao painel</a>';
+                console.error(e);
             }
-        } catch (e) {
-            document.getElementById('status').textContent = 'Erro: ' + e.message;
         }
+        
+        // Aguarda página carregar completamente
+        setTimeout(extractToken, 500);
     </script>
 </body>
 </html>
