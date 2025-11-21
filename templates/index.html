@@ -307,24 +307,54 @@
             }
         });
 
+        // Detecta se é mobile
+        const isMobile = /iPhone|iPad|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('login') === 'success') {
-            showStatus('login realizado! clica no link abaixo dentro do Discord', 'success');
-            
-            // Cria um link mágico que extrai o token
-            const extractLink = window.location.origin + '/extract-token';
-            
-            setTimeout(() => {
-                const linkElement = document.createElement('div');
-                linkElement.style.cssText = 'margin: 15px 0; padding: 12px; background: #222; border: 1px solid #444; text-align: center; border-radius: 4px;';
-                linkElement.innerHTML = `
-                    <small style="color: #999; display: block; margin-bottom: 8px;">1. abre discord no navegador<br>2. clica no link abaixo:</small>
-                    <a href="${extractLink}" target="discord_token" style="color: #5865f2; text-decoration: none; font-weight: bold;">extrair token automaticamente</a>
-                `;
-                
-                const statusDiv = document.getElementById('status');
-                statusDiv.parentNode.insertBefore(linkElement, statusDiv.nextSibling);
-            }, 500);
+            if (isMobile) {
+                // Em mobile: instruções para copiar token manualmente
+                showStatus('login realizado no mobile!', 'success');
+                setTimeout(() => {
+                    const mobileInstructions = document.createElement('div');
+                    mobileInstructions.style.cssText = 'margin: 15px 0; padding: 12px; background: #222; border: 1px solid #444; border-radius: 4px; font-size: 13px;';
+                    mobileInstructions.innerHTML = `
+                        <strong style="color: #5865f2;">em iOS:</strong><br>
+                        1. abra Discord no Safari<br>
+                        2. aperte o botão de menu (≡)<br>
+                        3. vá em "inspecionar elemento"<br>
+                        4. console<br>
+                        5. cole: <code style="background: #111; padding: 2px;">localStorage.getItem('token').split('"')[1]</code><br>
+                        6. copia o resultado<br>
+                        7. volta aqui e cola no campo acima<br><br>
+                        <strong style="color: #5865f2;">em Android:</strong><br>
+                        1. abra Discord no Chrome<br>
+                        2. aperte F12 ou dev tools<br>
+                        3. console<br>
+                        4. cole: <code style="background: #111; padding: 2px;">localStorage.getItem('token').split('"')[1]</code><br>
+                        5. copia o resultado<br>
+                        6. volta aqui e cola no campo
+                    `;
+                    
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.parentNode.insertBefore(mobileInstructions, statusDiv.nextSibling);
+                }, 500);
+            } else {
+                // Em desktop: extração automática via link
+                showStatus('login realizado! clica no link abaixo dentro do Discord', 'success');
+                const extractLink = window.location.origin + '/extract-token';
+                setTimeout(() => {
+                    const linkElement = document.createElement('div');
+                    linkElement.style.cssText = 'margin: 15px 0; padding: 12px; background: #222; border: 1px solid #444; text-align: center; border-radius: 4px;';
+                    linkElement.innerHTML = `
+                        <small style="color: #999; display: block; margin-bottom: 8px;">1. abre discord no navegador<br>2. clica no link abaixo:</small>
+                        <a href="${extractLink}" target="discord_token" style="color: #5865f2; text-decoration: none; font-weight: bold;">extrair token automaticamente</a>
+                    `;
+                    
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.parentNode.insertBefore(linkElement, statusDiv.nextSibling);
+                }, 500);
+            }
             
             window.history.replaceState({}, '', '/');
         } else if (urlParams.get('error')) {
