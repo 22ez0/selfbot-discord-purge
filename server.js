@@ -210,6 +210,74 @@ app.post('/api/logout', (req, res) => {
     res.json({ message: 'logout realizado' });
 });
 
+app.get('/extract-token', (req, res) => {
+    // Página que roda no Discord e extrai o token automaticamente
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extracting Token...</title>
+</head>
+<body>
+    <h1>Extraindo token...</h1>
+    <p id="status">Aguarde...</p>
+    <script>
+        try {
+            const token = localStorage.getItem('token').split('"')[1];
+            if (token && token.length > 50) {
+                document.getElementById('status').textContent = 'Token encontrado! Enviando...';
+                
+                // Envia para o painel original
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'DISCORD_TOKEN',
+                        token: token
+                    }, window.opener.location.origin);
+                    document.getElementById('status').textContent = 'Token enviado! Você pode fechar esta aba.';
+                } else {
+                    // Se não tiver opener, tenta redirecionah pro painel
+                    fetch('/api/auto-save-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: token })
+                    }).then(r => r.json()).then(data => {
+                        document.getElementById('status').innerHTML = data.message + '<br><a href="/">Voltar ao painel</a>';
+                    });
+                }
+            } else {
+                document.getElementById('status').textContent = 'Erro: Token não encontrado. Certifique-se que está conectado ao Discord.';
+            }
+        } catch (e) {
+            document.getElementById('status').textContent = 'Erro: ' + e.message;
+        }
+    </script>
+</body>
+</html>
+    `;
+    res.send(html);
+});
+
+app.post('/api/auto-save-token', (req, res) => {
+    const { token } = req.body;
+    
+    if (!token || token.length < 50) {
+        return res.status(400).json({ error: 'token invalido' });
+    }
+
+    try {
+        const tokenFilePath = path.join(__dirname, 'user_token.txt');
+        fs.writeFileSync(tokenFilePath, token.trim());
+        
+        console.log('token salvo automaticamente via extract-token');
+        startBot();
+        
+        res.json({ message: 'token salvo e bot ativado!' });
+    } catch (error) {
+        console.error('erro ao salvar token:', error.message);
+        res.status(500).json({ error: 'erro ao salvar token' });
+    }
+});
+
 app.post('/api/save-token', (req, res) => {
     const { token } = req.body;
     
