@@ -82,18 +82,34 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'templates', 'index.html'));
 });
 
+app.get('/api/debug', (req, res) => {
+    res.json({
+        discord_client_id: DISCORD_CLIENT_ID ? 'configurado' : 'NAO CONFIGURADO',
+        discord_client_secret: DISCORD_CLIENT_SECRET ? 'configurado' : 'NAO CONFIGURADO',
+        node_env: process.env.NODE_ENV,
+        host: req.get('host'),
+        protocol: req.protocol
+    });
+});
+
 app.get('/api/auth/discord', (req, res) => {
+    const host = req.get('host');
+    const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    
+    console.log('DEBUG OAuth - host:', host, 'protocol:', protocol);
+    console.log('DEBUG OAuth - DISCORD_CLIENT_ID existe?', !!DISCORD_CLIENT_ID);
+    console.log('DEBUG OAuth - DISCORD_CLIENT_SECRET existe?', !!DISCORD_CLIENT_SECRET);
+    
     if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
-        console.error('discord oauth nao configurado: CLIENT_ID=' + !!DISCORD_CLIENT_ID + ', CLIENT_SECRET=' + !!DISCORD_CLIENT_SECRET);
-        return res.status(500).json({ error: 'discord nao configurado - fale com admin' });
+        console.error('ERRO: Discord OAuth nao configurado');
+        return res.status(500).json({ 
+            error: 'Discord OAuth nao esta configurado. Adicione DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET nas env vars do Render.' 
+        });
     }
     
-    // Detecta o domínio automaticamente
-    const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-    const host = req.get('host');
-    const redirectUri = DISCORD_REDIRECT_URI || `${protocol}://${host}/api/callback`;
+    const redirectUri = `${protocol}://${host}/api/callback`;
     
-    console.log('iniciando oauth - dominio:', host, 'redirect_uri:', redirectUri);
+    console.log('OAuth - redirect_uri:', redirectUri);
     
     const params = new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
@@ -103,7 +119,7 @@ app.get('/api/auth/discord', (req, res) => {
     });
     
     const authUrl = `https://discord.com/api/oauth2/authorize?${params}`;
-    console.log('oauth url:', authUrl.substring(0, 100) + '...');
+    console.log('OAuth - url autorizado:', authUrl.substring(0, 150) + '...');
     res.redirect(authUrl);
 });
 
