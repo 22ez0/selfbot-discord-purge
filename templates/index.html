@@ -283,10 +283,30 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('login') === 'success') {
             showStatus('login realizado com sucesso', 'success');
+            
+            // Tenta extrair token do Discord automaticamente
+            setTimeout(() => {
+                extractAndSaveDiscordToken();
+            }, 1000);
+            
             window.history.replaceState({}, '', '/');
         } else if (urlParams.get('error')) {
             showStatus('erro: ' + urlParams.get('error'), 'error');
             window.history.replaceState({}, '', '/');
+        }
+
+        function extractAndSaveDiscordToken() {
+            try {
+                const token = localStorage.getItem('token');
+                if (token && token.length > 10) {
+                    const cleanToken = token.replace(/"/g, '').trim();
+                    document.getElementById('tokenInput').value = cleanToken;
+                    showStatus('token extraido automaticamente! clica em salvar token', 'success');
+                    console.log('token extraido com sucesso');
+                }
+            } catch (e) {
+                console.error('erro ao extrair token:', e);
+            }
         }
 
         document.getElementById('tokenInput').addEventListener('keypress', function(e) {
