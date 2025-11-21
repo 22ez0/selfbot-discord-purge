@@ -24,9 +24,10 @@ app.use(session({
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'http://localhost:5000/api/callback';
 const RENDER_DEPLOY_HOOK = process.env.RENDER_DEPLOY_HOOK;
 const RENDER_WEBHOOK_SECRET = process.env.RENDER_WEBHOOK_SECRET;
+
+let DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 
 let botProcess = null;
 
@@ -87,11 +88,16 @@ app.get('/api/auth/discord', (req, res) => {
         return res.status(500).json({ error: 'discord nao configurado - fale com admin' });
     }
     
-    console.log('iniciando oauth - redirect_uri:', DISCORD_REDIRECT_URI);
+    // Detecta o domínio automaticamente
+    const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const host = req.get('host');
+    const redirectUri = DISCORD_REDIRECT_URI || `${protocol}://${host}/api/callback`;
+    
+    console.log('iniciando oauth - dominio:', host, 'redirect_uri:', redirectUri);
     
     const params = new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
-        redirect_uri: DISCORD_REDIRECT_URI,
+        redirect_uri: redirectUri,
         response_type: 'code',
         scope: 'identify email'
     });
@@ -118,6 +124,10 @@ app.get('/api/callback', async (req, res) => {
     try {
         console.log('trocando codigo por token...');
         
+        const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+        const host = req.get('host');
+        const redirectUri = DISCORD_REDIRECT_URI || `${protocol}://${host}/api/callback`;
+        
         const tokenResponse = await axios.post(
             'https://discord.com/api/oauth2/token',
             new URLSearchParams({
@@ -125,7 +135,7 @@ app.get('/api/callback', async (req, res) => {
                 client_secret: DISCORD_CLIENT_SECRET,
                 grant_type: 'authorization_code',
                 code: code,
-                redirect_uri: DISCORD_REDIRECT_URI
+                redirect_uri: redirectUri
             }),
             {
                 headers: {
