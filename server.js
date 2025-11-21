@@ -175,7 +175,8 @@ app.get('/api/callback', async (req, res) => {
         req.session.user = userResponse.data;
         req.session.loggedIn = true;
         
-        res.redirect('/?login=success');
+        // Redireciona para página que extrai token automaticamente
+        res.redirect('/?login=success&extract_token=true');
         
     } catch (error) {
         console.error('erro oauth completo:', {
