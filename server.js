@@ -12,6 +12,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('static'));
 
+// Trust proxy headers (importante para Render, Heroku, etc)
+app.set('trust proxy', 1);
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'change-this-secret-key-in-production',
     resave: false,
@@ -94,11 +97,10 @@ app.get('/api/debug', (req, res) => {
 
 app.get('/api/auth/discord', (req, res) => {
     const host = req.get('host');
-    const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    // Em produção, sempre HTTPS. Render/proxies usam x-forwarded-proto
+    const protocol = req.get('x-forwarded-proto') || req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
     
-    console.log('DEBUG OAuth - host:', host, 'protocol:', protocol);
-    console.log('DEBUG OAuth - DISCORD_CLIENT_ID existe?', !!DISCORD_CLIENT_ID);
-    console.log('DEBUG OAuth - DISCORD_CLIENT_SECRET existe?', !!DISCORD_CLIENT_SECRET);
+    console.log('OAuth - host:', host, 'protocol:', protocol, 'NODE_ENV:', process.env.NODE_ENV);
     
     if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
         console.error('ERRO: Discord OAuth nao configurado');
@@ -109,7 +111,7 @@ app.get('/api/auth/discord', (req, res) => {
     
     const redirectUri = `${protocol}://${host}/api/callback`;
     
-    console.log('OAuth - redirect_uri:', redirectUri);
+    console.log('OAuth redirect_uri:', redirectUri);
     
     const params = new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
@@ -119,7 +121,6 @@ app.get('/api/auth/discord', (req, res) => {
     });
     
     const authUrl = `https://discord.com/api/oauth2/authorize?${params}`;
-    console.log('OAuth - url autorizado:', authUrl.substring(0, 150) + '...');
     res.redirect(authUrl);
 });
 
@@ -140,7 +141,7 @@ app.get('/api/callback', async (req, res) => {
     try {
         console.log('trocando codigo por token...');
         
-        const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+        const protocol = req.get('x-forwarded-proto') || req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
         const host = req.get('host');
         const redirectUri = DISCORD_REDIRECT_URI || `${protocol}://${host}/api/callback`;
         
