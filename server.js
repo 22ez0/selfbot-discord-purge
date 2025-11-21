@@ -82,28 +82,42 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/auth/discord', (req, res) => {
-    if (!DISCORD_CLIENT_ID) {
-        return res.status(500).json({ error: 'discord oauth nao configurado' });
+    if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
+        console.error('discord oauth nao configurado: CLIENT_ID=' + !!DISCORD_CLIENT_ID + ', CLIENT_SECRET=' + !!DISCORD_CLIENT_SECRET);
+        return res.status(500).json({ error: 'discord nao configurado - fale com admin' });
     }
+    
+    console.log('iniciando oauth - redirect_uri:', DISCORD_REDIRECT_URI);
     
     const params = new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
         redirect_uri: DISCORD_REDIRECT_URI,
         response_type: 'code',
-        scope: 'identify'
+        scope: 'identify email'
     });
     
-    res.redirect(`https://discord.com/oauth2/authorize?${params}`);
+    const authUrl = `https://discord.com/api/oauth2/authorize?${params}`;
+    console.log('oauth url:', authUrl.substring(0, 100) + '...');
+    res.redirect(authUrl);
 });
 
 app.get('/api/callback', async (req, res) => {
-    const { code } = req.query;
+    const { code, error } = req.query;
+    
+    console.log('callback discord recebido - code:', !!code, 'error:', error);
+    
+    if (error) {
+        console.error('discord oauth error:', error);
+        return res.redirect('/?error=usuario_cancelou');
+    }
     
     if (!code) {
         return res.redirect('/?error=codigo_invalido');
     }
     
     try {
+        console.log('trocando codigo por token...');
+        
         const tokenResponse = await axios.post(
             'https://discord.com/api/oauth2/token',
             new URLSearchParams({
@@ -120,6 +134,7 @@ app.get('/api/callback', async (req, res) => {
             }
         );
         
+        console.log('token obtido com sucesso');
         const { access_token } = tokenResponse.data;
         
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
@@ -128,13 +143,20 @@ app.get('/api/callback', async (req, res) => {
             }
         });
         
+        console.log('usuario obtido:', userResponse.data.username);
+        
         req.session.user = userResponse.data;
         req.session.loggedIn = true;
         
         res.redirect('/?login=success');
         
     } catch (error) {
-        console.error('erro oauth:', error.response?.data || error.message);
+        console.error('erro oauth completo:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            url: error.config?.url
+        });
         res.redirect('/?error=autenticacao_falhou');
     }
 });
