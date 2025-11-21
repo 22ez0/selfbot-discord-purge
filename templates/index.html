@@ -177,17 +177,25 @@
         </div>
 
         <div class="input-group">
-            <label>token do usuario</label>
+            <label>token do usuario discord</label>
             <input 
                 type="password" 
                 id="tokenInput" 
                 placeholder="cole seu token aqui"
                 autocomplete="off"
             >
+            <small style="color: #666; margin-top: 5px; display: block; font-size: 11px;">
+                como obter seu token:<br>
+                1. abra discord no navegador<br>
+                2. aperte f12 (developer tools)<br>
+                3. vá em console e cole:<br>
+                <code style="background: #111; padding: 2px 4px;">(function(){const t=localStorage.getItem('token').split('"')[1]; console.log(t)})()</code><br>
+                4. copia o resultado
+            </small>
         </div>
 
         <button onclick="saveToken()" id="saveBtn">
-            salvar token
+            salvar token e ativar bot
         </button>
 
         <div class="status" id="status"></div>
@@ -296,36 +304,9 @@
         }
 
         function extractAndSaveDiscordToken() {
-            try {
-                // Discord web armazena em localStorage com chave "token"
-                let token = localStorage.getItem('token');
-                
-                // Se não encontrar, tenta outras chaves possíveis
-                if (!token) {
-                    token = localStorage.getItem('_discord_token');
-                }
-                if (!token) {
-                    token = sessionStorage.getItem('token');
-                }
-                
-                console.log('localStorage.token:', token ? 'encontrado' : 'nao encontrado');
-                console.log('localStorage keys:', Object.keys(localStorage));
-                
-                if (token) {
-                    const cleanToken = token.replace(/["\s]/g, '').trim();
-                    if (cleanToken.length > 10) {
-                        document.getElementById('tokenInput').value = cleanToken;
-                        showStatus('token extraido! clica em salvar token', 'success');
-                        console.log('token extraido com sucesso, length:', cleanToken.length);
-                        return;
-                    }
-                }
-                
-                showStatus('nao conseguiu extrair token automaticamente. cole manualmente', 'error');
-            } catch (e) {
-                console.error('erro ao extrair token:', e);
-                showStatus('erro ao extrair token', 'error');
-            }
+            // A extração automática não é possível por razões de segurança
+            // Discord não expõe o token via localStorage para JS
+            showStatus('cole seu token manualmente no campo. instruções acima!', 'error');
         }
 
         document.getElementById('tokenInput').addEventListener('keypress', function(e) {
