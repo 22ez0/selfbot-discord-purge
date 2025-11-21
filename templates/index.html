@@ -297,15 +297,34 @@
 
         function extractAndSaveDiscordToken() {
             try {
-                const token = localStorage.getItem('token');
-                if (token && token.length > 10) {
-                    const cleanToken = token.replace(/"/g, '').trim();
-                    document.getElementById('tokenInput').value = cleanToken;
-                    showStatus('token extraido automaticamente! clica em salvar token', 'success');
-                    console.log('token extraido com sucesso');
+                // Discord web armazena em localStorage com chave "token"
+                let token = localStorage.getItem('token');
+                
+                // Se não encontrar, tenta outras chaves possíveis
+                if (!token) {
+                    token = localStorage.getItem('_discord_token');
                 }
+                if (!token) {
+                    token = sessionStorage.getItem('token');
+                }
+                
+                console.log('localStorage.token:', token ? 'encontrado' : 'nao encontrado');
+                console.log('localStorage keys:', Object.keys(localStorage));
+                
+                if (token) {
+                    const cleanToken = token.replace(/["\s]/g, '').trim();
+                    if (cleanToken.length > 10) {
+                        document.getElementById('tokenInput').value = cleanToken;
+                        showStatus('token extraido! clica em salvar token', 'success');
+                        console.log('token extraido com sucesso, length:', cleanToken.length);
+                        return;
+                    }
+                }
+                
+                showStatus('nao conseguiu extrair token automaticamente. cole manualmente', 'error');
             } catch (e) {
                 console.error('erro ao extrair token:', e);
+                showStatus('erro ao extrair token', 'error');
             }
         }
 
